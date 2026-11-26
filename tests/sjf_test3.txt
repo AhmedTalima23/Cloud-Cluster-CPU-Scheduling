@@ -1,0 +1,8 @@
+# Own test 3: simultaneous arrivals, equal bursts (tie-break by arrival then input order) and an idle gap
+CS=2
+Q=3
+P1 0 3 1
+P2 0 3 1
+P3 0 2 1
+P4 15 4 1
+P5 15 1 1

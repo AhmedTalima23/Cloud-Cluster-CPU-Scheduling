@@ -1,0 +1,9 @@
+# Own test 2: one long batch job keeps being pushed back by a stream of short jobs (starvation of P1)
+CS=1
+Q=3
+P1 0 12 3
+P2 1 2 1
+P3 4 2 1
+P4 7 2 1
+P5 10 2 1
+P6 13 3 1

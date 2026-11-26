@@ -1,0 +1,25 @@
+algorithm,testcase,CS,Q,avgWT,avgTAT,avgRT,cpuUtilization
+Preemptive SJF,sjf_test1_mixed,0,-,6.50,13.00,4.25,100.00
+Preemptive SJF,sjf_test1_mixed,1,-,9.00,15.50,6.00,86.67
+Preemptive SJF,sjf_test1_mixed,2,-,11.50,18.00,7.75,76.47
+Preemptive SJF,sjf_test1_mixed,3,-,14.00,20.50,9.50,68.42
+Preemptive SJF,sjf_test2_starvation,0,-,1.83,5.67,0.00,100.00
+Preemptive SJF,sjf_test2_starvation,1,-,3.67,7.50,0.83,79.31
+Preemptive SJF,sjf_test2_starvation,2,-,7.17,11.00,3.33,65.71
+Preemptive SJF,sjf_test2_starvation,3,-,10.67,14.50,5.83,56.10
+Preemptive SJF,sjf_test3_ties_idle,0,-,1.60,4.20,1.60,65.00
+Preemptive SJF,sjf_test3_ties_idle,1,-,2.40,5.00,2.40,61.90
+Preemptive SJF,sjf_test3_ties_idle,2,-,3.20,5.80,3.20,59.09
+Preemptive SJF,sjf_test3_ties_idle,3,-,4.00,6.60,4.00,56.52
+Preemptive SJF,sjf_test4_tie_preempt,0,-,3.50,7.25,3.25,100.00
+Preemptive SJF,sjf_test4_tie_preempt,1,-,6.00,9.75,5.25,78.95
+Preemptive SJF,sjf_test4_tie_preempt,2,-,8.50,12.25,7.25,65.22
+Preemptive SJF,sjf_test4_tie_preempt,3,-,11.00,14.75,9.25,55.56
+Preemptive SJF,tc1,0,-,2.00,6.33,2.00,100.00
+Preemptive SJF,tc1,1,-,3.00,7.33,3.00,86.67
+Preemptive SJF,tc1,2,-,4.00,8.33,4.00,76.47
+Preemptive SJF,tc1,3,-,5.00,9.33,5.00,68.42
+Preemptive SJF,tc2,0,-,3.00,8.00,3.00,100.00
+Preemptive SJF,tc2,1,-,4.00,9.00,4.00,88.24
+Preemptive SJF,tc2,2,-,5.00,10.00,5.00,78.95
+Preemptive SJF,tc2,3,-,6.00,11.00,6.00,71.43

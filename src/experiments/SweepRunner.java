@@ -13,16 +13,6 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Stream;
 
-/**
- * Sweeps CS (0..3) and Q (2..6) over every test file for every available scheduler, writes
- * sweep.csv and PNG graphs of average waiting / turnaround time.
- *
- * Usage: java -cp out experiments.SweepRunner [testsDir] [outDir]
- *   defaults: tests  report   (CSV -> report/data/sweep.csv, graphs -> report/graphs/)
- *
- * Schedulers swept: sjf.PreemptiveSJF always, and acs.ACSScheduler when it is on the classpath.
- * Schedulers whose usesQuantum() is false (SJF) are swept over CS only.
- */
 public class SweepRunner {
     static final int[] CS_VALUES = {0, 1, 2, 3};
     static final int[] Q_VALUES = {2, 3, 4, 5, 6};
@@ -41,7 +31,6 @@ public class SweepRunner {
         try {
             schedulers.add((Scheduler) Class.forName("acs.ACSScheduler").getDeclaredConstructor().newInstance());
         } catch (ReflectiveOperationException ignored) {
-            // ACS not on the classpath yet
         }
 
         List<Named> tests = new ArrayList<>();

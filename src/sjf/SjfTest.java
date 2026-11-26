@@ -6,7 +6,6 @@ import core.SimulationResult;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Self-checking tests: java -cp out sjf.SjfTest */
 public class SjfTest {
     static int failed = 0;
 
@@ -25,23 +24,19 @@ public class SjfTest {
     public static void main(String[] a) {
         PreemptiveSJF s = new PreemptiveSJF();
 
-        // Classic SRTF example, CS = 0
         SimulationResult r = s.run(list(new int[][]{{0, 8}, {1, 4}, {2, 9}, {3, 5}}), 3, 0);
         check("classic avg WT", r.getAvgWaitingTime(), 6.5);
         check("classic avg TAT", r.getAvgTurnaroundTime(), 13.0);
         check("classic P2 finish", r.getProcesses().get(1).getFinishTime(), 5);
 
-        // Tie: P2 arrives with burst == P1's remaining -> no preemption
         r = s.run(list(new int[][]{{0, 6}, {2, 4}}), 3, 1);
         check("tie P1 finish (no preemption)", r.getProcesses().get(0).getFinishTime(), 6);
         check("tie P2 finish (CS after P1)", r.getProcesses().get(1).getFinishTime(), 11);
 
-        // Idle gap: no CS charged after idle
         r = s.run(list(new int[][]{{0, 2}, {10, 3}}), 3, 5);
         check("idle P2 start", r.getProcesses().get(1).getFirstStartTime(), 10);
         check("idle P2 finish", r.getProcesses().get(1).getFinishTime(), 13);
 
-        // Preemption and CS after a finish (CS = 1)
         r = s.run(list(new int[][]{{0, 4}, {1, 2}}), 3, 1);
         check("preempt P2 start", r.getProcesses().get(1).getFirstStartTime(), 2);
         check("preempt P2 finish", r.getProcesses().get(1).getFinishTime(), 4);

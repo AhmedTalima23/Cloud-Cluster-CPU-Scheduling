@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.util.*;
 import javax.imageio.ImageIO;
 
-/** Minimal Java2D line-chart renderer (no external libraries). */
 public class ChartWriter {
     private static final Color[] COLORS = {
         new Color(0x1f77b4), new Color(0xd62728), new Color(0x2ca02c), new Color(0xff7f0e),
@@ -72,5 +71,8 @@ public class ChartWriter {
         double mag = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / mag;
         return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * mag;
     }
-    private static String fmt(double v) { return v == Math.rint(v) ? String.valueOf((long) v) : String.format("%.1f", v); }
+
+    private static String fmt(double v) {
+        return v == Math.rint(v) ? String.valueOf((long) v) : String.format("%.1f", v);
+    }
 }

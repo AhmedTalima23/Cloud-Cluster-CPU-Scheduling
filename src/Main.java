@@ -57,6 +57,9 @@ public class Main {
 
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
+                case "--gui":
+                    gui.SimulatorGUI.main(new String[0]);
+                    return;
                 case "--list":
                     printAvailableSchedulers();
                     return;
@@ -219,6 +222,7 @@ public class Main {
     private static void printUsage() {
         System.out.println("Usage:");
         System.out.println("  java -cp out Main");
+        System.out.println("  java -cp out Main --gui");
         System.out.println("  java -cp out Main --list");
         System.out.println("  java -cp out Main --scheduler <sjf|acs> --file <path> [--q <int>] [--cs <int>] [--out <path>]");
     }

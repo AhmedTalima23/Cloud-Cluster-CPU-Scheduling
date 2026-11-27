@@ -5,7 +5,6 @@ import core.Process;
 import core.Scheduler;
 import core.SimulationResult;
 import core.Snapshot;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,127 +21,358 @@ public class PreemptiveSJF implements Scheduler {
     }
 
     @Override
-    public SimulationResult run(List<Process> input, int quantum, int contextSwitch) {
+    public SimulationResult run(
+            List<Process> input,
+            int quantum,
+            int contextSwitch) {
+
+        if (input == null) {
+            throw new IllegalArgumentException(
+                    "Input cannot be null"
+            );
+        }
+
+        if (contextSwitch < 0) {
+            throw new IllegalArgumentException(
+                    "Context switch cannot be negative"
+            );
+        }
+
         List<Process> ps = new ArrayList<>();
+
         for (Process p : input) {
+
+            if (p == null) {
+                throw new IllegalArgumentException(
+                        "Process list cannot contain null"
+                );
+            }
+
             ps.add(p.freshCopy());
         }
-        int n = ps.size();
-        List<Snapshot> snapshots = new ArrayList<>();
-        List<SimulationResult.TimelineSegment> timeline = new ArrayList<>();
 
-        int t = 0, done = 0, csLeft = 0, csCount = 0;
-        Process last = null, committed = null, loading = null;
+        int n = ps.size();
+
+        List<Snapshot> snapshots = new ArrayList<>();
+
+        List<SimulationResult.TimelineSegment> timeline =
+                new ArrayList<>();
+
+        int t = 0;
+        int done = 0;
+        int csLeft = 0;
+        int csCount = 0;
+
+        Process last = null;
+
+        // Indicates that a context switch has just finished.
+        boolean afterContextSwitch = false;
 
         while (done < n) {
+
+            // Handle Context Switching
             if (csLeft > 0) {
-                snapshots.add(new Snapshot(t, Snapshot.EVENT_CS, queue(ps, t, loading), null,
-                        "Context switch saves " + last.getId() + " and loads " + loading.getId()));
-                addSegment(timeline, "CS", t, true, false);
+
+                snapshots.add(
+                        new Snapshot(
+                                t,
+                                Snapshot.EVENT_CS,
+                                queue(ps, t, null),
+                                null,
+                                "Context switch from " + last.getId()
+                        )
+                );
+
+                addSegment(
+                        timeline,
+                        "CS",
+                        t,
+                        true,
+                        false
+                );
+
                 t++;
-                if (--csLeft == 0) {
-                    committed = loading;
-                    loading = null;
+                csLeft--;
+
+                if (csLeft == 0) {
+                    afterContextSwitch = true;
                 }
+
                 continue;
             }
 
-            Process best;
-            if (committed != null) {
-                best = committed;
-                committed = null;
-            } else {
-                best = pick(ps, t, last);
-                if (best == null) {
-                    int next = Integer.MAX_VALUE;
-                    for (Process p : ps) {
-                        if (p.getRemainingTime() > 0) {
-                            next = Math.min(next, p.getArrivalTime());
-                        }
+            // Select the process with the shortest remaining time
+            Process best = pick(ps, t, last);
+
+            // Handle CPU Idle Time
+            if (best == null) {
+
+                int next = Integer.MAX_VALUE;
+
+                for (Process p : ps) {
+
+                    if (p.getRemainingTime() > 0) {
+
+                        next = Math.min(
+                                next,
+                                p.getArrivalTime()
+                        );
                     }
-                    for (; t < next; t++) {
-                        snapshots.add(new Snapshot(t, Snapshot.EVENT_IDLE, null, null));
-                        addSegment(timeline, "IDLE", t, false, true);
-                    }
-                    last = null;
-                    continue;
                 }
-                if (last != null && best != last) {
-                    csCount++;
-                    if (contextSwitch > 0) {
-                        loading = best;
-                        csLeft = contextSwitch;
-                        continue;
-                    }
+
+                if (next == Integer.MAX_VALUE) {
+                    break;
+                }
+
+                while (t < next) {
+
+                    snapshots.add(
+                            new Snapshot(
+                                    t,
+                                    Snapshot.EVENT_IDLE,
+                                    null,
+                                    null
+                            )
+                    );
+
+                    addSegment(
+                            timeline,
+                            "IDLE",
+                            t,
+                            false,
+                            true
+                    );
+
+                    t++;
+                }
+
+                last = null;
+                afterContextSwitch = false;
+
+                continue;
+            }
+
+            // Handle Process Switching
+            if (last != null
+                    && best != last
+                    && !afterContextSwitch) {
+
+                csCount++;
+
+                if (contextSwitch > 0) {
+
+                    csLeft = contextSwitch;
+
+                    continue;
                 }
             }
 
+            // Context switch is completed.
+            // The process is selected again after the CS.
+            afterContextSwitch = false;
+
+            // Execute the selected process
             best.recordStartIfUnset(t);
-            snapshots.add(new Snapshot(t, best.getId(), queue(ps, t, best), null));
-            addSegment(timeline, best.getId(), t, false, false);
+
+            snapshots.add(
+                    new Snapshot(
+                            t,
+                            best.getId(),
+                            queue(ps, t, best),
+                            null
+                    )
+            );
+
+            addSegment(
+                    timeline,
+                    best.getId(),
+                    t,
+                    false,
+                    false
+            );
+
             best.executeFor(1);
+
             t++;
+
             last = best;
+
             if (best.getRemainingTime() == 0) {
+
                 best.setFinishTime(t);
+
                 done++;
             }
         }
-        return MetricsCalculator.buildResult(getName(), quantum, contextSwitch, snapshots, timeline, ps, csCount);
+
+        return MetricsCalculator.buildResult(
+                getName(),
+                quantum,
+                contextSwitch,
+                snapshots,
+                timeline,
+                ps,
+                csCount
+        );
     }
 
-    private Process pick(List<Process> ps, int t, Process last) {
+    // Select the best ready process
+    private Process pick(
+            List<Process> ps,
+            int t,
+            Process last) {
+
         Process best = null;
+
         for (Process p : ps) {
-            if (p.getArrivalTime() > t || p.getRemainingTime() == 0) {
+
+            if (p.getArrivalTime() > t
+                    || p.getRemainingTime() == 0) {
+
                 continue;
             }
+
             if (best == null || better(ps, p, best, last)) {
                 best = p;
             }
         }
+
         return best;
     }
 
-    private boolean better(List<Process> ps, Process a, Process b, Process last) {
+    // Compare two processes
+    private boolean better(
+            List<Process> ps,
+            Process a,
+            Process b,
+            Process last) {
+
+        // First: Shortest Remaining Time
         if (a.getRemainingTime() != b.getRemainingTime()) {
-            return a.getRemainingTime() < b.getRemainingTime();
+
+            return a.getRemainingTime()
+                    < b.getRemainingTime();
         }
-        if (a == last) return true;
-        if (b == last) return false;
+
+        // Tie: Prefer the currently running process
+        if (a == last) {
+            return true;
+        }
+
+        if (b == last) {
+            return false;
+        }
+
+        // Then: Earlier arrival time
         if (a.getArrivalTime() != b.getArrivalTime()) {
-            return a.getArrivalTime() < b.getArrivalTime();
+
+            return a.getArrivalTime()
+                    < b.getArrivalTime();
         }
+
+        // Finally: Original input order
         return ps.indexOf(a) < ps.indexOf(b);
     }
 
-    private List<Snapshot.QueueEntry> queue(List<Process> ps, int t, Process onCpu) {
+    // Build the ready queue snapshot
+    private List<Snapshot.QueueEntry> queue(
+            List<Process> ps,
+            int t,
+            Process onCpu) {
+
         List<Process> q = new ArrayList<>();
+
         for (Process p : ps) {
-            if (p.getArrivalTime() <= t && p.getRemainingTime() > 0 && p != onCpu) {
+
+            if (p.getArrivalTime() <= t
+                    && p.getRemainingTime() > 0
+                    && p != onCpu) {
+
                 q.add(p);
             }
         }
+
         q.sort((a, b) -> {
-            if (a.getRemainingTime() != b.getRemainingTime()) return a.getRemainingTime() - b.getRemainingTime();
-            if (a.getArrivalTime() != b.getArrivalTime()) return a.getArrivalTime() - b.getArrivalTime();
-            return ps.indexOf(a) - ps.indexOf(b);
+
+            int remainingCompare = Integer.compare(
+                    a.getRemainingTime(),
+                    b.getRemainingTime()
+            );
+
+            if (remainingCompare != 0) {
+                return remainingCompare;
+            }
+
+            int arrivalCompare = Integer.compare(
+                    a.getArrivalTime(),
+                    b.getArrivalTime()
+            );
+
+            if (arrivalCompare != 0) {
+                return arrivalCompare;
+            }
+
+            return Integer.compare(
+                    ps.indexOf(a),
+                    ps.indexOf(b)
+            );
         });
+
         List<Snapshot.QueueEntry> out = new ArrayList<>();
+
         for (Process p : q) {
-            out.add(new Snapshot.QueueEntry(p.getId(), p.getRemainingTime(), p.getEffectivePriority()));
+
+            out.add(
+                    new Snapshot.QueueEntry(
+                            p.getId(),
+                            p.getRemainingTime(),
+                            p.getEffectivePriority()
+                    )
+            );
         }
+
         return out;
     }
 
-    private void addSegment(List<SimulationResult.TimelineSegment> tl, String label, int t, boolean cs, boolean idle) {
+    // Add or merge timeline segments
+    private void addSegment(
+            List<SimulationResult.TimelineSegment> tl,
+            String label,
+            int t,
+            boolean cs,
+            boolean idle) {
+
         if (!tl.isEmpty()) {
-            SimulationResult.TimelineSegment last = tl.get(tl.size() - 1);
-            if (last.getLabel().equals(label) && last.getEndTime() == t) {
-                tl.set(tl.size() - 1, new SimulationResult.TimelineSegment(label, last.getStartTime(), t + 1, cs, idle));
+
+            SimulationResult.TimelineSegment last =
+                    tl.get(tl.size() - 1);
+
+            if (last.getLabel().equals(label)
+                    && last.getEndTime() == t) {
+
+                tl.set(
+                        tl.size() - 1,
+                        new SimulationResult.TimelineSegment(
+                                label,
+                                last.getStartTime(),
+                                t + 1,
+                                cs,
+                                idle
+                        )
+                );
+
                 return;
             }
         }
-        tl.add(new SimulationResult.TimelineSegment(label, t, t + 1, cs, idle));
+
+        tl.add(
+                new SimulationResult.TimelineSegment(
+                        label,
+                        t,
+                        t + 1,
+                        cs,
+                        idle
+                )
+        );
     }
 }
